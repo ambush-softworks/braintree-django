@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "braintree_django"
+version = "0.0.1"
+authors = [
+  { name="Lloyd Capson", email="lloyd@ambush.works" },
+]
+description = "A Braintree integration for django."
+readme = "README.rst"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Framework :: Django",
+    "Framework :: Django :: 3.2",
+    "Framework :: Django :: 4.0",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ambush-softworks/braintree-django"
+"Bug Tracker" = "https://github.com/ambush-softworks/braintree-django/issues"

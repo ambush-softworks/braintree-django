@@ -1,0 +1,8 @@
+# Development
+build
+
+# Formating
+autopep8
+
+# Testing
+coverage
