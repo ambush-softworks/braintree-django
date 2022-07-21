@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "braintree_django"
-version = "0.0.1"
+version = "0.0.0"
 authors = [
   { name="Lloyd Capson", email="lloyd@ambush.works" },
 ]
@@ -12,6 +12,10 @@ description = "A Braintree integration for django."
 readme = "README.rst"
 license = { file="LICENSE" }
 requires-python = ">=3.7"
+dependencies = [
+  "django>=3.2,<4.1",
+  "gql[websockets]>=3.4.0,<3.5"
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
