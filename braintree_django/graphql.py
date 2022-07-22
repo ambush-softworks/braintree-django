@@ -1,6 +1,5 @@
 import json
 from base64 import b64encode
-from dataclasses import dataclass
 from typing import Dict
 from django.conf import settings
 
@@ -10,7 +9,6 @@ from gql.transport.aiohttp import AIOHTTPTransport
 from .settings import braintree_settings
 
 
-@dataclass
 class BraintreePaymentMethod:
     payment_method: Dict
     verification: Dict
@@ -21,47 +19,6 @@ class BraintreePaymentMethod:
 
     def id(self) -> str:
         return self.payment_method.id
-
-
-@dataclass
-class BraintreeCustomer:
-    def __init__(self, id: str = None, company_name: str = None, first_name: str = None, last_name: str = None):
-        self.id = id
-        self.company_name = company_name
-        self.first_name = first_name
-        self.last_name = last_name
-
-    def to_json(self):
-        data = {}
-        if self.company_name:
-            data.update(
-                {"company": self.company_name}
-            )
-        if self.first_name:
-            data.update(
-                {"firstName": self.first_name}
-            )
-        if self.last_name:
-            data.update(
-                {"lastName": self.last_name}
-            )
-        return json.dumps(data)
-
-    def create(self):
-        result = create_customer(self)
-        self.id = get_id(result)
-
-    def get_id(self, result) -> str:
-        """
-        Parses result and returns customer id
-        """
-        try:
-            customer_data = json.loads(
-                result)["data"]["createCustomer"]["customer"]
-            self.id = customer_data["id"]
-            return self.id
-        except:
-            return None
 
 
 class BraintreeGraphQL:
@@ -94,7 +51,7 @@ class BraintreeGraphQL:
             fetch_schema_from_transport=False
         )
 
-    def client_token(self):
+    def client_token(self, customer_id: str):
         query = gql(
             """
             mutation ClientToken($merchant: CreateClientTokenInput) {
@@ -108,7 +65,7 @@ class BraintreeGraphQL:
             "merchant": {
                 "clientToken": {
                     "merchantAccountId": braintree_settings.BRAINTREE_MERCHANT_ID,
-                    "customerId": 4
+                    "customerId": customer_id
                 }
             }
         }
@@ -117,32 +74,7 @@ class BraintreeGraphQL:
 
         return result
 
-    def create_customer(self, customer: BraintreeCustomer = None):
-        query = gql(
-            """
-            mutation CreateCustomer($input: CreateCustomerInput!) {
-                createCustomer(input: $input) {
-                    customer {
-                    id
-                    company
-                    firstName
-                    lastName
-                    }
-                }
-            }
-            """
-        )
-        params = {
-            "input": {
-                "customer": {
-                    customer.to_json()
-                }
-            }
-        }
-        result = self._client.execute(query, variable_values=params)
-        return result
-
-    def save_payment_method(self, nonce: str = None) -> BraintreePaymentMethod:
+    def save_payment_method(self, customer_id: str, nonce: str = None) -> BraintreePaymentMethod:
         """
         Use nonce to save payment method to vault.
 
@@ -176,9 +108,74 @@ class BraintreeGraphQL:
         params = {
             "input": {
                 "paymentMethodId": nonce,
-                "customerId": 4
+                "customerId": customer_id
             }
         }
         result = self._client.execute(query, variable_values=params)
 
         return BraintreePaymentMethod(result)
+
+
+class BraintreeCustomer:
+    def __init__(self, id: str = None, company_name: str = None, first_name: str = None, last_name: str = None, gql: BraintreeGraphQL = None):
+        self.gql = gql
+        self.id = id
+        self.company_name = company_name
+        self.first_name = first_name
+        self.last_name = last_name
+
+        self.connect()
+
+    def connect(self):
+        if self.gql == None:
+            self.gql = BraintreeGraphQL()
+
+    def to_dict(self) -> Dict:
+        """
+        Returns dict containing any fields that contain values.
+
+        Used to provid parameters for CreateCustomer mutation.
+        """
+        data = {}
+        if self.id:
+            data.update(
+                {"id": self.id}
+            )
+        if self.company_name:
+            data.update(
+                {"company": self.company_name}
+            )
+        if self.first_name:
+            data.update(
+                {"firstName": self.first_name}
+            )
+        if self.last_name:
+            data.update(
+                {"lastName": self.last_name}
+            )
+        return data
+
+    def create(self):
+        query = gql(
+            """
+            mutation CreateCustomer($input: CreateCustomerInput!) {
+                createCustomer(input: $input) {
+                    customer {
+                    id
+                    company
+                    firstName
+                    lastName
+                    }
+                }
+            }
+            """
+        )
+        params = {
+            "input": {
+                "customer": self.to_dict()
+            }
+        }
+
+        result = self.gql._client.execute(query, variable_values=params)
+        self.id = result["createCustomer"]["customer"]["id"]
+        return self.id
