@@ -5,7 +5,7 @@ from typing import Dict
 from django.conf import settings
 
 from gql import gql, Client
-from gql.transport.websockets import WebsocketsTransport
+from gql.transport.aiohttp import AIOHTTPTransport
 
 from .settings import braintree_settings
 
@@ -66,33 +66,32 @@ class BraintreeCustomer:
 
 class BraintreeGraphQL:
     def __init__(self):
-        api_token = b64encode("{}:{}".format(
+        base64_token = b64encode('{}:{}'.format(
             braintree_settings.BRAINTREE_PUBLIC_KEY,
             braintree_settings.BRAINTREE_PRIVATE_KEY
-        ))
+        ).encode('utf-8'))
+        api_token = str(base64_token, "utf-8")
 
         headers = {
-            'Authorization': "Bearer {}".format(api_token),
-            'Braintree_Version': '2019-01-01',
+            'Authorization': "Basic {}".format(api_token),
+            'Braintree-Version': '2022-07-19',
             'Content-Type': 'application/json'
         }
 
         if settings.DEBUG == False:
-            transport = WebsocketsTransport(
+            transport = AIOHTTPTransport(
                 url=braintree_settings.BRAINTREE_PRODUCTION_URL,
-                headers={'Authorization': api_token_header}
+                headers=headers
             )
         else:
-            transport = WebsocketsTransport(
+            transport = AIOHTTPTransport(
                 url=braintree_settings.BRAINTREE_SANDBOX_URL,
-                headers={
-                    'Authorization': api_token_header,
-                }
+                headers=headers
             )
 
         self._client = Client(
             transport=transport,
-            fetch_schema_from_transport=True
+            fetch_schema_from_transport=False
         )
 
     def client_token(self):
