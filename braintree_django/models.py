@@ -6,18 +6,33 @@ from django.db import models
 from .settings import braintree_settings
 
 
-class Customer(models.Model):
-    id = models.CharField(primary_key=True, max_length=24)
+class CustomerVault(models.Model):
+    """
+    Model containing the customer information stored in the Braintree Vault API
+
+    Fields
+    ----------
+    customer_id : str
+        The customer ID in the braintree vault API
+    owner : Model
+        The model in the app that relates to the user or customer.
+    """
+    customer_id = models.CharField(primary_key=True, max_length=24)
     owner = models.OneToOneField(
         braintree_settings.CUSTOMER_MODEL,
         on_delete=models.PROTECT,
-        related_name="braintree_customer"
+        related_query_name="customer_vault"
     )
+
+    def __unicode__(self):
+        return self.id
 
 
 class PaymentMethod(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
+    customer = models.ForeignKey(
+        CustomerVault, on_delete=models.CASCADE, related_name='payment_methods'
+    )
     payement_method_id = models.CharField(max_length=255)
     last4 = models.CharField(max_length=4)
     exp_month = models.CharField(max_length=2)

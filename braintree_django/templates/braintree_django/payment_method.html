@@ -43,8 +43,9 @@
                     instance.requestPaymentMethod(function (err, payload) {
                         $.ajax({
                             type: 'POST',
-                            url: '{% url "braintree_django:payment" %}',
+                            url: '{% url "braintree_django:payment-method-save" %}',
                             data: {
+                                'customerId': '{{customer_vault_id}}',
                                 'paymentMethodNonce': payload.nonce,
                                 'csrfmiddlewaretoken': '{{ csrf_token }}'
                             }
