@@ -1,12 +1,16 @@
 import json
+import logging
 from base64 import b64encode
 from typing import Dict
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
 from .settings import braintree_settings
+
+logger = logging.getLogger(__name__)
 
 
 class BraintreeGraphQL:
@@ -44,9 +48,11 @@ class BraintreeCustomer:
     def __init__(self, id: str = None, company_name: str = None, first_name: str = None, last_name: str = None, gql: BraintreeGraphQL = None):
         self.gql = gql
         self.id = id
-        self.company_name = company_name
-        self.first_name = first_name
-        self.last_name = last_name
+        # self.company_name = company_name
+        # self.first_name = first_name
+        # self.last_name = last_name
+
+        self.fetch_data(self.id)
 
         self.connect()
 
@@ -54,17 +60,19 @@ class BraintreeCustomer:
         if self.gql == None:
             self.gql = BraintreeGraphQL()
 
+    # def model_type(self):
+
     def to_dict(self) -> Dict:
         """
         Returns dict containing any fields that contain values.
 
-        Used to provid parameters for CreateCustomer mutation.
+        Used to provid parameters for customer mutations.
         """
         data = {}
-        if self.id:
-            data.update(
-                {"id": self.id}
-            )
+        # if self.id:
+        #     data.update(
+        #         {"id": str(self.id)}
+        #     )
         if self.company_name:
             data.update(
                 {"company": self.company_name}
@@ -78,6 +86,32 @@ class BraintreeCustomer:
                 {"lastName": self.last_name}
             )
         return data
+
+    def fetch_data(self, customer_id):
+        """
+        Gets customer model ContentType and gets customer data in order to create a customer with Braintree.
+        """
+        model_name = braintree_settings.CUSTOMER_MODEL.split('.', 1)
+
+        print("Customer Model Name: {}".format(model_name[1]))
+        print("Customer Model App Label: {}".format(model_name[0]))
+
+        try:
+            customer_model_type = ContentType.objects.get(
+                app_label__iexact=model_name[0],
+                model__iexact=model_name[1]
+            )
+            print("Content Type: {}".format(customer_model_type))
+        except Exception as e:
+            print(e)
+
+        customer_obj = customer_model_type.get_object_for_this_type(
+            id=customer_id)
+        print("Customer Object: {}".format(customer_obj))
+
+        self.company_name = customer_obj.company_name
+        self.first_name = customer_obj.contact_first_name
+        self.last_name = customer_obj.contact_last_name
 
     def create(self):
         query = gql(
@@ -100,8 +134,13 @@ class BraintreeCustomer:
             }
         }
 
-        result = self.gql._client.execute(query, variable_values=params)
-        self.id = result['createCustomer']['customer']['id']
+        try:
+            result = self.gql._client.execute(query, variable_values=params)
+            print("Customer Result: {}".format(result))
+            self.id = result['createCustomer']['customer']['id']
+        except Exception as e:
+            logger.error("Failed to create Braintree customer: {}".format(e))
+            return None
         return self.id
 
     def update(self):
