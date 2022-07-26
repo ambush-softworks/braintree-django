@@ -13,7 +13,7 @@ class CustomerVault(models.Model):
     Fields
     ----------
     customer_id : str
-        The customer ID in the braintree vault API
+        The customerId in the braintree vault API
     owner : Model
         The model in the app that relates to the user or customer.
     """
@@ -30,13 +30,13 @@ class CustomerVault(models.Model):
 
 class PaymentMethod(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    customer = models.ForeignKey(
+    vault = models.ForeignKey(
         CustomerVault, on_delete=models.CASCADE, related_name='payment_methods'
     )
-    payement_method_id = models.CharField(max_length=255)
-    last4 = models.CharField(max_length=4)
+    braintree_id = models.CharField(max_length=255)
+    last_four = models.CharField(max_length=4)
     exp_month = models.CharField(max_length=2)
-    exp_year = models.CharField(max_length=2)
+    exp_year = models.CharField(max_length=4)
 
     def __unicode__(self):
         return self.id
