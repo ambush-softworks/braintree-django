@@ -90,8 +90,10 @@ class AbstractBaseCustomerModel(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     company_name = models.CharField(max_length=60, null=True, blank=True)
-    first_name = models.CharField(max_length=50, null=True, blank=True)
-    last_name = models.CharField(max_length=50, null=True, blank=True)
+    contact_first_name = models.CharField(max_length=50, null=True, blank=True)
+    contact_last_name = models.CharField(max_length=50, null=True, blank=True)
+    contact_email = models.EmailField(null=True, blank=True)
+    contact_phone = models.CharField(max_length=20, null=True, blank=True)
 
     class Meta:
         abstract = True
