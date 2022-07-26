@@ -104,6 +104,33 @@ class BraintreeCustomer:
         self.id = result['createCustomer']['customer']['id']
         return self.id
 
+    def update(self):
+        if self.id is not None:
+            query = gql(
+                """
+                mutation UpdateCustomer($input: CustomerInput!) {
+                    updateCustomer(input: $input) {
+                        customer {
+                        company
+                        firstName
+                        lastName
+                        }
+                    }
+                }
+                """
+            )
+            params = {
+                "input": {
+                    "customerId": self.id(),
+                    "customer": self.to_dict()
+                }
+            }
+
+            result = self.gql._client.execute(query, variable_values=params)
+            print("updateCustomer Result: {}".format(result))
+        else:
+            print("No customerID to update.")
+
 
 class BraintreePaymentMethod:
     # payment_method: Dict
