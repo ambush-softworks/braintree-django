@@ -33,7 +33,7 @@ class BraintreeGraphQL:
                 headers=headers
             )
 
-        self._client = Client(
+        self.client = Client(
             transport=transport,
             fetch_schema_from_transport=False
         )
