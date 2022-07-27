@@ -25,7 +25,7 @@ class CustomerVault(models.Model):
     )
 
     def __unicode__(self):
-        return self.id
+        return self.customer_id
 
 
 class PaymentMethod(models.Model):
@@ -39,7 +39,7 @@ class PaymentMethod(models.Model):
     exp_year = models.CharField(max_length=4)
 
     def __unicode__(self):
-        return self.id
+        return "Card: {}".format(self.last_four)
 
 
 class Transaction(models.Model):
